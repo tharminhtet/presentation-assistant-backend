@@ -13,12 +13,13 @@ async def test_client():
         simulated_audio = base64.b64encode(b"This is simulated audio data").decode(
             "utf-8"
         )
-        # await websocket.send(json.dumps({"type": "audio", "audio": simulated_audio}))
-        # print("Sent simulated audio data")
+        await websocket.send(json.dumps({"type": "audio", "audio": simulated_audio}))
+        print("Sent simulated audio data")
 
         # Send a text message
         await websocket.send(
-            json.dumps({"type": "text", "content": "Go to the next slide"})
+            # json.dumps({"type": "text", "content": "Go to the next slide"})
+            json.dumps({"type": "text", "content": "Hi"})
         )
 
         # Listen for responses

@@ -10,6 +10,7 @@ load_dotenv()
 # Define your tools/functions
 tools = [
     {
+        "type": "function",
         "name": "next_slide",
         "description": "Move to the next slide in the presentation. Do not confirm the order is completed yet",
         "parameters": {
@@ -19,6 +20,7 @@ tools = [
         },
     },
     {
+        "type": "function",
         "name": "previous_slide",
         "description": "Move to the previous slide in the presentation. Do not confirm the order is completed yet",
         "parameters": {
@@ -28,6 +30,7 @@ tools = [
         },
     },
     {
+        "type": "function",
         "name": "go_to_slide",
         "description": "Go to a specific slide number in the presentation. Do not confirm the order is completed yet",
         "parameters": {
@@ -84,7 +87,7 @@ async def openai_realtime_connection(websocket, path):
                     "type": "session.update",
                     "session": {
                         "modalities": ["text", "audio"],
-                        "instructions": "You are a helpful assistant for controlling a presentation. Use tools if you can..",
+                        "instructions": "You are a helpful assistant for controlling a presentation.",
                         "voice": "alloy",
                         "input_audio_format": "pcm16",
                         "output_audio_format": "pcm16",
@@ -98,7 +101,6 @@ async def openai_realtime_connection(websocket, path):
                         "tools": tools,
                         "tool_choice": "auto",
                         "temperature": 0.8,
-                        "max_output_tokens": None,
                     },
                 }
             )
@@ -106,12 +108,14 @@ async def openai_realtime_connection(websocket, path):
 
         # Handle messages from the client
         async def handle_client_messages():
+            # Update session properties
+
             async for message in websocket:
                 data = json.loads(message)
-                print(f"Received message from client: {data}")
+                # print(f"Received message from client: {data}")
 
                 if data["type"] == "audio":
-                    print(f"Received audio data of length: {len(data['audio'])}")
+                    # print(f"Received audio data of length: {len(data['audio'])}")
                     # Send audio to OpenAI
                     await openai_ws.send(
                         json.dumps(
@@ -134,7 +138,6 @@ async def openai_realtime_connection(websocket, path):
                             }
                         )
                     )
-                    print("Audio data sent to OpenAI")
 
                 elif data["type"] == "text":
                     # Handle text input
@@ -153,7 +156,6 @@ async def openai_realtime_connection(websocket, path):
                         )
                     )
                     await openai_ws.send(json.dumps({"type": "response.create"}))
-                    print("Text input sent to OpenAI")
 
         # Handle messages from OpenAI
         async def handle_openai_messages():
@@ -163,9 +165,11 @@ async def openai_realtime_connection(websocket, path):
                     response = json.loads(response)
                     # if not response["type"].startswith("response.audio"):
                     #     print(response)
-                    if response["type"] == "conversation.item.created":
-                        print(response)
-                    # print(f"Received message from OpenAI: {response}")
+                    # if response["type"].startswith("session"):
+                    #     print(response)
+                    # print(response["type"])
+                    # if response["type"] == "error":
+                    #     print(response)
 
                     if response["type"] == "response.audio.delta":
                         audio_data = response["delta"]
@@ -204,6 +208,7 @@ async def openai_realtime_connection(websocket, path):
                             result = None
                             if function_name == "next_slide":
                                 result = next_slide()
+                                function_call = {"action": "next_slide"}
                             elif function_name == "previous_slide":
                                 result = previous_slide()
                             elif function_name == "go_to_slide":
@@ -234,7 +239,8 @@ async def openai_realtime_connection(websocket, path):
                                 )
                             )
                     elif response["type"] == "response.done":
-                        print("Response completed")
+                        # print("Response completed")
+                        pass
                         # You might want to send a completion message to the client here
 
                 except websockets.exceptions.ConnectionClosed:
